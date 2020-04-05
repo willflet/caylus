@@ -16,7 +16,7 @@
 
 """A utility class to write to and read from a non-blocking socket."""
 
-from __future__ import with_statement
+
 
 import collections
 import errno
@@ -119,7 +119,7 @@ class IOStream(object):
         self._connecting = True
         try:
             self.socket.connect(address)
-        except socket.error, e:
+        except socket.error as e:
             # In non-blocking mode connect() always raises an exception
             if e.args[0] not in (errno.EINPROGRESS, errno.EWOULDBLOCK):
                 raise
@@ -303,7 +303,7 @@ class IOStream(object):
         """
         try:
             chunk = self.socket.recv(self.read_chunk_size)
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
                 return None
             else:
@@ -322,7 +322,7 @@ class IOStream(object):
         """
         try:
             chunk = self._read_from_socket()
-        except socket.error, e:
+        except socket.error as e:
             # ssl.SSLError is a subclass of socket.error
             logging.warning("Read error on %d: %s",
                             self.socket.fileno(), e)
@@ -352,7 +352,7 @@ class IOStream(object):
                 self._run_callback(callback, self._consume(num_bytes))
                 return True
         elif self._read_delimiter is not None:
-            _merge_prefix(self._read_buffer, sys.maxint)
+            _merge_prefix(self._read_buffer, sys.maxsize)
             loc = self._read_buffer[0].find(self._read_delimiter)
             if loc != -1:
                 callback = self._read_callback
@@ -396,7 +396,7 @@ class IOStream(object):
                 self._write_buffer_frozen = False
                 _merge_prefix(self._write_buffer, num_bytes)
                 self._write_buffer.popleft()
-            except socket.error, e:
+            except socket.error as e:
                 if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
                     self._write_buffer_frozen = True
                     break
@@ -465,7 +465,7 @@ class SSLIOStream(IOStream):
             self._handshake_reading = False
             self._handshake_writing = False
             self.socket.do_handshake()
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             if err.args[0] == ssl.SSL_ERROR_WANT_READ:
                 self._handshake_reading = True
                 return
@@ -479,7 +479,7 @@ class SSLIOStream(IOStream):
                 logging.warning("SSL Error on %d: %s", self.socket.fileno(), err)
                 return self.close()
             raise
-        except socket.error, err:
+        except socket.error as err:
             if err.args[0] == errno.ECONNABORTED:
                 return self.close()
         else:
@@ -516,14 +516,14 @@ class SSLIOStream(IOStream):
             # called when there is nothing to read, so we have to use
             # read() instead.
             chunk = self.socket.read(self.read_chunk_size)
-        except ssl.SSLError, e:
+        except ssl.SSLError as e:
             # SSLError is a subclass of socket.error, so this except
             # block must come first.
             if e.args[0] == ssl.SSL_ERROR_WANT_READ:
                 return None
             else:
                 raise
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
                 return None
             else:

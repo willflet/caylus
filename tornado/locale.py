@@ -74,11 +74,11 @@ def set_default_locale(code):
     global _default_locale
     global _supported_locales
     _default_locale = code
-    _supported_locales = frozenset(_translations.keys() + [_default_locale])
+    _supported_locales = frozenset(list(_translations.keys()) + [_default_locale])
 
 
 def load_translations(directory):
-    u"""Loads translations from CSV files in a directory.
+    """Loads translations from CSV files in a directory.
 
     Translations are strings with optional Python-style named placeholders
     (e.g., "My name is %(name)s") and their associated translations.
@@ -130,7 +130,7 @@ def load_translations(directory):
                 continue
             _translations[locale].setdefault(plural, {})[english] = translation
         f.close()
-    _supported_locales = frozenset(_translations.keys() + [_default_locale])
+    _supported_locales = frozenset(list(_translations.keys()) + [_default_locale])
     logging.info("Supported locales: %s", sorted(_supported_locales))
 
 def load_gettext_translations(directory, domain):
@@ -163,10 +163,10 @@ def load_gettext_translations(directory, domain):
             os.stat(os.path.join(directory, lang, "LC_MESSAGES", domain+".mo"))
             _translations[lang] = gettext.translation(domain, directory,
                                                       languages=[lang])
-        except Exception, e:
+        except Exception as e:
             logging.error("Cannot load translation for '%s': %s", lang, str(e))
             continue
-    _supported_locales = frozenset(_translations.keys() + [_default_locale])
+    _supported_locales = frozenset(list(_translations.keys()) + [_default_locale])
     _use_gettext = True
     logging.info("Supported locales: %s", sorted(_supported_locales))
 
@@ -221,7 +221,7 @@ class Locale(object):
 
     def __init__(self, code, translations):
         self.code = code
-        self.name = LOCALE_NAMES.get(code, {}).get("name", u"Unknown")
+        self.name = LOCALE_NAMES.get(code, {}).get("name", "Unknown")
         self.rtl = False
         for prefix in ["fa", "ar", "he"]:
             if self.code.startswith(prefix):
@@ -263,7 +263,7 @@ class Locale(object):
         """
         if self.code.startswith("ru"):
             relative = False
-        if type(date) in (int, long, float):
+        if type(date) in (int, int, float):
             date = datetime.datetime.utcfromtimestamp(date)
         now = datetime.datetime.utcnow()
         if date > now:
@@ -321,7 +321,7 @@ class Locale(object):
             str_time = "%d:%02d" % (local_date.hour, local_date.minute)
         elif self.code == "zh_CN":
             str_time = "%s%d:%02d" % (
-                (u'\u4e0a\u5348', u'\u4e0b\u5348')[local_date.hour >= 12],
+                ('\u4e0a\u5348', '\u4e0b\u5348')[local_date.hour >= 12],
                 local_date.hour % 12 or 12, local_date.minute)
         else:
             str_time = "%d:%02d %s" % (
@@ -365,7 +365,7 @@ class Locale(object):
         _ = self.translate
         if len(parts) == 0: return ""
         if len(parts) == 1: return parts[0]
-        comma = u' \u0648 ' if self.code.startswith("fa") else u", "
+        comma = ' \u0648 ' if self.code.startswith("fa") else ", "
         return _("%(commas)s and %(last)s") % {
             "commas": comma.join(parts[:-1]),
             "last": parts[len(parts) - 1],
@@ -406,66 +406,66 @@ class GettextLocale(Locale):
             return self.translations.ugettext(message)
 
 LOCALE_NAMES = {
-    "af_ZA": {"name_en": u"Afrikaans", "name": u"Afrikaans"},
-    "am_ET": {"name_en": u"Amharic", "name": u'\u12a0\u121b\u122d\u129b'},
-    "ar_AR": {"name_en": u"Arabic", "name": u"\u0627\u0644\u0639\u0631\u0628\u064a\u0629"},
-    "bg_BG": {"name_en": u"Bulgarian", "name": u"\u0411\u044a\u043b\u0433\u0430\u0440\u0441\u043a\u0438"},
-    "bn_IN": {"name_en": u"Bengali", "name": u"\u09ac\u09be\u0982\u09b2\u09be"},
-    "bs_BA": {"name_en": u"Bosnian", "name": u"Bosanski"},
-    "ca_ES": {"name_en": u"Catalan", "name": u"Catal\xe0"},
-    "cs_CZ": {"name_en": u"Czech", "name": u"\u010ce\u0161tina"},
-    "cy_GB": {"name_en": u"Welsh", "name": u"Cymraeg"},
-    "da_DK": {"name_en": u"Danish", "name": u"Dansk"},
-    "de_DE": {"name_en": u"German", "name": u"Deutsch"},
-    "el_GR": {"name_en": u"Greek", "name": u"\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"},
-    "en_GB": {"name_en": u"English (UK)", "name": u"English (UK)"},
-    "en_US": {"name_en": u"English (US)", "name": u"English (US)"},
-    "es_ES": {"name_en": u"Spanish (Spain)", "name": u"Espa\xf1ol (Espa\xf1a)"},
-    "es_LA": {"name_en": u"Spanish", "name": u"Espa\xf1ol"},
-    "et_EE": {"name_en": u"Estonian", "name": u"Eesti"},
-    "eu_ES": {"name_en": u"Basque", "name": u"Euskara"},
-    "fa_IR": {"name_en": u"Persian", "name": u"\u0641\u0627\u0631\u0633\u06cc"},
-    "fi_FI": {"name_en": u"Finnish", "name": u"Suomi"},
-    "fr_CA": {"name_en": u"French (Canada)", "name": u"Fran\xe7ais (Canada)"},
-    "fr_FR": {"name_en": u"French", "name": u"Fran\xe7ais"},
-    "ga_IE": {"name_en": u"Irish", "name": u"Gaeilge"},
-    "gl_ES": {"name_en": u"Galician", "name": u"Galego"},
-    "he_IL": {"name_en": u"Hebrew", "name": u"\u05e2\u05d1\u05e8\u05d9\u05ea"},
-    "hi_IN": {"name_en": u"Hindi", "name": u"\u0939\u093f\u0928\u094d\u0926\u0940"},
-    "hr_HR": {"name_en": u"Croatian", "name": u"Hrvatski"},
-    "hu_HU": {"name_en": u"Hungarian", "name": u"Magyar"},
-    "id_ID": {"name_en": u"Indonesian", "name": u"Bahasa Indonesia"},
-    "is_IS": {"name_en": u"Icelandic", "name": u"\xcdslenska"},
-    "it_IT": {"name_en": u"Italian", "name": u"Italiano"},
-    "ja_JP": {"name_en": u"Japanese", "name": u"\u65e5\u672c\u8a9e"},
-    "ko_KR": {"name_en": u"Korean", "name": u"\ud55c\uad6d\uc5b4"},
-    "lt_LT": {"name_en": u"Lithuanian", "name": u"Lietuvi\u0173"},
-    "lv_LV": {"name_en": u"Latvian", "name": u"Latvie\u0161u"},
-    "mk_MK": {"name_en": u"Macedonian", "name": u"\u041c\u0430\u043a\u0435\u0434\u043e\u043d\u0441\u043a\u0438"},
-    "ml_IN": {"name_en": u"Malayalam", "name": u"\u0d2e\u0d32\u0d2f\u0d3e\u0d33\u0d02"},
-    "ms_MY": {"name_en": u"Malay", "name": u"Bahasa Melayu"},
-    "nb_NO": {"name_en": u"Norwegian (bokmal)", "name": u"Norsk (bokm\xe5l)"},
-    "nl_NL": {"name_en": u"Dutch", "name": u"Nederlands"},
-    "nn_NO": {"name_en": u"Norwegian (nynorsk)", "name": u"Norsk (nynorsk)"},
-    "pa_IN": {"name_en": u"Punjabi", "name": u"\u0a2a\u0a70\u0a1c\u0a3e\u0a2c\u0a40"},
-    "pl_PL": {"name_en": u"Polish", "name": u"Polski"},
-    "pt_BR": {"name_en": u"Portuguese (Brazil)", "name": u"Portugu\xeas (Brasil)"},
-    "pt_PT": {"name_en": u"Portuguese (Portugal)", "name": u"Portugu\xeas (Portugal)"},
-    "ro_RO": {"name_en": u"Romanian", "name": u"Rom\xe2n\u0103"},
-    "ru_RU": {"name_en": u"Russian", "name": u"\u0420\u0443\u0441\u0441\u043a\u0438\u0439"},
-    "sk_SK": {"name_en": u"Slovak", "name": u"Sloven\u010dina"},
-    "sl_SI": {"name_en": u"Slovenian", "name": u"Sloven\u0161\u010dina"},
-    "sq_AL": {"name_en": u"Albanian", "name": u"Shqip"},
-    "sr_RS": {"name_en": u"Serbian", "name": u"\u0421\u0440\u043f\u0441\u043a\u0438"},
-    "sv_SE": {"name_en": u"Swedish", "name": u"Svenska"},
-    "sw_KE": {"name_en": u"Swahili", "name": u"Kiswahili"},
-    "ta_IN": {"name_en": u"Tamil", "name": u"\u0ba4\u0bae\u0bbf\u0bb4\u0bcd"},
-    "te_IN": {"name_en": u"Telugu", "name": u"\u0c24\u0c46\u0c32\u0c41\u0c17\u0c41"},
-    "th_TH": {"name_en": u"Thai", "name": u"\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22"},
-    "tl_PH": {"name_en": u"Filipino", "name": u"Filipino"},
-    "tr_TR": {"name_en": u"Turkish", "name": u"T\xfcrk\xe7e"},
-    "uk_UA": {"name_en": u"Ukraini ", "name": u"\u0423\u043a\u0440\u0430\u0457\u043d\u0441\u044c\u043a\u0430"},
-    "vi_VN": {"name_en": u"Vietnamese", "name": u"Ti\u1ebfng Vi\u1ec7t"},
-    "zh_CN": {"name_en": u"Chinese (Simplified)", "name": u"\u4e2d\u6587(\u7b80\u4f53)"},
-    "zh_TW": {"name_en": u"Chinese (Traditional)", "name": u"\u4e2d\u6587(\u7e41\u9ad4)"},
+    "af_ZA": {"name_en": "Afrikaans", "name": "Afrikaans"},
+    "am_ET": {"name_en": "Amharic", "name": '\u12a0\u121b\u122d\u129b'},
+    "ar_AR": {"name_en": "Arabic", "name": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"},
+    "bg_BG": {"name_en": "Bulgarian", "name": "\u0411\u044a\u043b\u0433\u0430\u0440\u0441\u043a\u0438"},
+    "bn_IN": {"name_en": "Bengali", "name": "\u09ac\u09be\u0982\u09b2\u09be"},
+    "bs_BA": {"name_en": "Bosnian", "name": "Bosanski"},
+    "ca_ES": {"name_en": "Catalan", "name": "Catal\xe0"},
+    "cs_CZ": {"name_en": "Czech", "name": "\u010ce\u0161tina"},
+    "cy_GB": {"name_en": "Welsh", "name": "Cymraeg"},
+    "da_DK": {"name_en": "Danish", "name": "Dansk"},
+    "de_DE": {"name_en": "German", "name": "Deutsch"},
+    "el_GR": {"name_en": "Greek", "name": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"},
+    "en_GB": {"name_en": "English (UK)", "name": "English (UK)"},
+    "en_US": {"name_en": "English (US)", "name": "English (US)"},
+    "es_ES": {"name_en": "Spanish (Spain)", "name": "Espa\xf1ol (Espa\xf1a)"},
+    "es_LA": {"name_en": "Spanish", "name": "Espa\xf1ol"},
+    "et_EE": {"name_en": "Estonian", "name": "Eesti"},
+    "eu_ES": {"name_en": "Basque", "name": "Euskara"},
+    "fa_IR": {"name_en": "Persian", "name": "\u0641\u0627\u0631\u0633\u06cc"},
+    "fi_FI": {"name_en": "Finnish", "name": "Suomi"},
+    "fr_CA": {"name_en": "French (Canada)", "name": "Fran\xe7ais (Canada)"},
+    "fr_FR": {"name_en": "French", "name": "Fran\xe7ais"},
+    "ga_IE": {"name_en": "Irish", "name": "Gaeilge"},
+    "gl_ES": {"name_en": "Galician", "name": "Galego"},
+    "he_IL": {"name_en": "Hebrew", "name": "\u05e2\u05d1\u05e8\u05d9\u05ea"},
+    "hi_IN": {"name_en": "Hindi", "name": "\u0939\u093f\u0928\u094d\u0926\u0940"},
+    "hr_HR": {"name_en": "Croatian", "name": "Hrvatski"},
+    "hu_HU": {"name_en": "Hungarian", "name": "Magyar"},
+    "id_ID": {"name_en": "Indonesian", "name": "Bahasa Indonesia"},
+    "is_IS": {"name_en": "Icelandic", "name": "\xcdslenska"},
+    "it_IT": {"name_en": "Italian", "name": "Italiano"},
+    "ja_JP": {"name_en": "Japanese", "name": "\u65e5\u672c\u8a9e"},
+    "ko_KR": {"name_en": "Korean", "name": "\ud55c\uad6d\uc5b4"},
+    "lt_LT": {"name_en": "Lithuanian", "name": "Lietuvi\u0173"},
+    "lv_LV": {"name_en": "Latvian", "name": "Latvie\u0161u"},
+    "mk_MK": {"name_en": "Macedonian", "name": "\u041c\u0430\u043a\u0435\u0434\u043e\u043d\u0441\u043a\u0438"},
+    "ml_IN": {"name_en": "Malayalam", "name": "\u0d2e\u0d32\u0d2f\u0d3e\u0d33\u0d02"},
+    "ms_MY": {"name_en": "Malay", "name": "Bahasa Melayu"},
+    "nb_NO": {"name_en": "Norwegian (bokmal)", "name": "Norsk (bokm\xe5l)"},
+    "nl_NL": {"name_en": "Dutch", "name": "Nederlands"},
+    "nn_NO": {"name_en": "Norwegian (nynorsk)", "name": "Norsk (nynorsk)"},
+    "pa_IN": {"name_en": "Punjabi", "name": "\u0a2a\u0a70\u0a1c\u0a3e\u0a2c\u0a40"},
+    "pl_PL": {"name_en": "Polish", "name": "Polski"},
+    "pt_BR": {"name_en": "Portuguese (Brazil)", "name": "Portugu\xeas (Brasil)"},
+    "pt_PT": {"name_en": "Portuguese (Portugal)", "name": "Portugu\xeas (Portugal)"},
+    "ro_RO": {"name_en": "Romanian", "name": "Rom\xe2n\u0103"},
+    "ru_RU": {"name_en": "Russian", "name": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"},
+    "sk_SK": {"name_en": "Slovak", "name": "Sloven\u010dina"},
+    "sl_SI": {"name_en": "Slovenian", "name": "Sloven\u0161\u010dina"},
+    "sq_AL": {"name_en": "Albanian", "name": "Shqip"},
+    "sr_RS": {"name_en": "Serbian", "name": "\u0421\u0440\u043f\u0441\u043a\u0438"},
+    "sv_SE": {"name_en": "Swedish", "name": "Svenska"},
+    "sw_KE": {"name_en": "Swahili", "name": "Kiswahili"},
+    "ta_IN": {"name_en": "Tamil", "name": "\u0ba4\u0bae\u0bbf\u0bb4\u0bcd"},
+    "te_IN": {"name_en": "Telugu", "name": "\u0c24\u0c46\u0c32\u0c41\u0c17\u0c41"},
+    "th_TH": {"name_en": "Thai", "name": "\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22"},
+    "tl_PH": {"name_en": "Filipino", "name": "Filipino"},
+    "tr_TR": {"name_en": "Turkish", "name": "T\xfcrk\xe7e"},
+    "uk_UA": {"name_en": "Ukraini ", "name": "\u0423\u043a\u0440\u0430\u0457\u043d\u0441\u044c\u043a\u0430"},
+    "vi_VN": {"name_en": "Vietnamese", "name": "Ti\u1ebfng Vi\u1ec7t"},
+    "zh_CN": {"name_en": "Chinese (Simplified)", "name": "\u4e2d\u6587(\u7b80\u4f53)"},
+    "zh_TW": {"name_en": "Chinese (Traditional)", "name": "\u4e2d\u6587(\u7e41\u9ad4)"},
 }

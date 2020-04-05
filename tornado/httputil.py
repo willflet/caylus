@@ -17,7 +17,7 @@
 """HTTP utility code shared by clients and servers."""
 
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 
 from tornado.util import b
@@ -79,7 +79,7 @@ class HTTPHeaders(dict):
         If a header has multiple values, multiple pairs will be
         returned with the same name.
         """
-        for name, list in self._as_list.iteritems():
+        for name, list in self._as_list.items():
             for value in list:
                 yield (name, value)
 
@@ -128,7 +128,7 @@ class HTTPHeaders(dict):
 
     def update(self, *args, **kwargs):
         # dict.update bypasses our __setitem__
-        for k, v in dict(*args, **kwargs).iteritems():
+        for k, v in dict(*args, **kwargs).items():
             self[k] = v
 
     _NORMALIZED_HEADER_RE = re.compile(r'^[A-Z0-9][a-z0-9]*(-[A-Z0-9][a-z0-9]*)*$')
@@ -162,7 +162,7 @@ def url_concat(url, args):
     if not args: return url
     if url[-1] not in ('?', '&'):
         url += '&' if ('?' in url) else '?'
-    return url + urllib.urlencode(args)
+    return url + urllib.parse.urlencode(args)
 
 def parse_multipart_form_data(boundary, data, arguments, files):
     """Parses a multipart/form-data body.

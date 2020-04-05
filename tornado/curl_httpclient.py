@@ -16,9 +16,9 @@
 
 """Blocking and non-blocking HTTP client implementations using pycurl."""
 
-from __future__ import with_statement
 
-import cStringIO
+
+import io
 import collections
 import logging
 import pycurl
@@ -40,7 +40,7 @@ class CurlAsyncHTTPClient(AsyncHTTPClient):
         self._multi.setopt(pycurl.M_TIMERFUNCTION, self._set_timeout)
         self._multi.setopt(pycurl.M_SOCKETFUNCTION, self._handle_socket)
         self._curls = [_curl_create(max_simultaneous_connections)
-                       for i in xrange(max_clients)]
+                       for i in range(max_clients)]
         self._free_list = self._curls[:]
         self._requests = collections.deque()
         self._fds = {}
@@ -121,7 +121,7 @@ class CurlAsyncHTTPClient(AsyncHTTPClient):
         while True:
             try:
                 ret, num_handles = self._socket_action(fd, action)
-            except pycurl.error, e:
+            except pycurl.error as e:
                 ret = e.args[0]
             if ret != pycurl.E_CALL_MULTI_PERFORM:
                 break
@@ -135,7 +135,7 @@ class CurlAsyncHTTPClient(AsyncHTTPClient):
                 try:
                     ret, num_handles = self._socket_action(
                         pycurl.SOCKET_TIMEOUT, 0)
-                except pycurl.error, e:
+                except pycurl.error as e:
                     ret = e.args[0]
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
                     break
@@ -166,7 +166,7 @@ class CurlAsyncHTTPClient(AsyncHTTPClient):
             while True:
                 try:
                     ret, num_handles = self._multi.socket_all()
-                except pycurl.error, e:
+                except pycurl.error as e:
                     ret = e.args[0]
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
                     break
@@ -196,7 +196,7 @@ class CurlAsyncHTTPClient(AsyncHTTPClient):
                     (request, callback) = self._requests.popleft()
                     curl.info = {
                         "headers": httputil.HTTPHeaders(),
-                        "buffer": cStringIO.StringIO(),
+                        "buffer": io.StringIO(),
                         "request": request,
                         "callback": callback,
                         "curl_start_time": time.time(),
@@ -294,7 +294,7 @@ def _curl_setup_request(curl, request, buffer, headers):
                     [utf8("%s: %s" % i) for i in request.headers.get_all()])
     else:
         curl.setopt(pycurl.HTTPHEADER,
-                    [utf8("%s: %s" % i) for i in request.headers.iteritems()])
+                    [utf8("%s: %s" % i) for i in request.headers.items()])
 
     if request.header_callback:
         curl.setopt(pycurl.HEADERFUNCTION, request.header_callback)
@@ -360,7 +360,7 @@ def _curl_setup_request(curl, request, buffer, headers):
         "HEAD": pycurl.NOBODY,
     }
     custom_methods = set(["DELETE"])
-    for o in curl_options.values():
+    for o in list(curl_options.values()):
         curl.setopt(o, False)
     if request.method in curl_options:
         curl.unsetopt(pycurl.CUSTOMREQUEST)
@@ -372,7 +372,7 @@ def _curl_setup_request(curl, request, buffer, headers):
 
     # Handle curl's cryptic options for every individual HTTP method
     if request.method in ("POST", "PUT"):
-        request_buffer =  cStringIO.StringIO(utf8(request.body))
+        request_buffer =  io.StringIO(utf8(request.body))
         curl.setopt(pycurl.READFUNCTION, request_buffer.read)
         if request.method == "POST":
             def ioctl(cmd):

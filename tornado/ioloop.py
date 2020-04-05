@@ -165,7 +165,7 @@ class IOLoop(object):
         IOLoop will be closed (not just the ones created by the IOLoop itself.
         """
         if all_fds:
-            for fd in self._handlers.keys()[:]:
+            for fd in list(self._handlers.keys())[:]:
                 if fd in (self._waker_reader.fileno(),
                           self._waker_writer.fileno()):
                     # Close these through the file objects that wrap them,
@@ -281,7 +281,7 @@ class IOLoop(object):
 
             try:
                 event_pairs = self._impl.poll(poll_timeout)
-            except Exception, e:
+            except Exception as e:
                 # Depending on python version and IOLoop implementation,
                 # different exception types may be thrown and there are
                 # two ways EINTR might be signaled:
@@ -307,7 +307,7 @@ class IOLoop(object):
                 fd, events = self._events.popitem()
                 try:
                     self._handlers[fd](fd, events)
-                except (OSError, IOError), e:
+                except (OSError, IOError) as e:
                     if e.args[0] == errno.EPIPE:
                         # Happens when the client closes the connection
                         pass
@@ -563,7 +563,7 @@ class _KQueue(object):
                     events[fd] = events.get(fd, 0) | IOLoop.WRITE
             if kevent.flags & select.KQ_EV_ERROR:
                 events[fd] = events.get(fd, 0) | IOLoop.ERROR
-        return events.items()
+        return list(events.items())
 
 
 class _Select(object):
@@ -606,7 +606,7 @@ class _Select(object):
             events[fd] = events.get(fd, 0) | IOLoop.WRITE
         for fd in errors:
             events[fd] = events.get(fd, 0) | IOLoop.ERROR
-        return events.items()
+        return list(events.items())
 
 
 # Choose a poll implementation. Use epoll if it is available, fall back to

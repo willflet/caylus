@@ -1,7 +1,7 @@
 #import json, logging
 import logging
-from django.utils import simplejson
-from game import *
+import json as simplejson
+from .game import *
 
 def player_to_json(player):
     info = {}
@@ -58,10 +58,10 @@ def game_to_json(game):
         info['current_decision'] = decision_to_json(game.current_decision)
     info['over'] = game.over
     return simplejson.dumps(info)
-    
+
 def action_to_json(action):
     return {'class':action.__class__.__name__, 'repr':repr(action)}
-    
+
 def decision_to_json(decision):
     info = {}
     info['cls'] = decision.__class__.__name__
@@ -79,28 +79,28 @@ def decision_to_json(decision):
         for action in decision.actions:
             info['actions'].append(action_to_json(action))
     return info
-    
+
 class JSONDecisionPlayer(Player):
     def make_decision(self, decision):
-        print decision_to_json(decision)
+        print(decision_to_json(decision))
         self.game.make_decision(decision, 0)
-    
+
 if __name__ == '__main__':
-    
+
     '''
     tracks = []
     for track in favor_tracks:
         tracks.append([repr(b) for b in track])
-    
+
     print json.dumps(tracks)'''
-    
-    
-    
+
+
+
     game = Game(1, JSONDecisionPlayer)
     game.begin_turn()
-    
+
     data = game_to_json(game)
-    print data
-    print len(data)
-    
+    print(data)
+    print(len(data))
+
     game.step_game()

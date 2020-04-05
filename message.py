@@ -28,7 +28,7 @@ class MessageQueue(object):
     def wait_for_messages(self, callback, cursor=None, id=None):
         if cursor:
             index = 0
-            for i in xrange(len(self.cache)):
+            for i in range(len(self.cache)):
                 index = len(self.cache) - i - 1
                 if self.cache[index]["id"] == cursor: break
             recent = self.cache[index + 1:]

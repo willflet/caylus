@@ -18,9 +18,9 @@ inheritance.  See the docstrings for each class/function below for more
 information.
 """
 
-from __future__ import with_statement
 
-from cStringIO import StringIO
+
+from io import StringIO
 from tornado.httpclient import AsyncHTTPClient
 from tornado.httpserver import HTTPServer
 from tornado.stack_context import StackContext, NullContext
@@ -172,9 +172,9 @@ class AsyncTestCase(unittest.TestCase):
             # 2to3 isn't smart enough to convert three-argument raise
             # statements correctly in some cases.
             if isinstance(self.__failure[1], self.__failure[0]):
-                raise self.__failure[1], None, self.__failure[2]
+                raise self.__failure[1].with_traceback(self.__failure[2])
             else:
-                raise self.__failure[0], self.__failure[1], self.__failure[2]
+                raise self.__failure[0](self.__failure[1]).with_traceback(self.__failure[2])
         result = self.__stop_args
         self.__stop_args = None
         return result
@@ -331,7 +331,7 @@ def main():
         AsyncHTTPClient.configure(options.httpclient)
 
     if __name__ == '__main__' and len(argv) == 1:
-        print >> sys.stderr, "No tests specified"
+        print("No tests specified", file=sys.stderr)
         sys.exit(1)
     try:
         # In order to be able to run tests by their fully-qualified name
@@ -344,7 +344,7 @@ def main():
             unittest.main(module=None, argv=argv)
         else:
             unittest.main(defaultTest="all", argv=argv)
-    except SystemExit, e:
+    except SystemExit as e:
         if e.code == 0:
             logging.info('PASS')
         else:

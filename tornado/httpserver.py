@@ -29,7 +29,7 @@ import logging
 import os
 import socket
 import time
-import urlparse
+import urllib.parse
 
 from tornado.escape import utf8, native_str, parse_qs_bytes
 from tornado import httputil
@@ -254,14 +254,14 @@ class HTTPServer(object):
                     try:
                         # If available, use the same method as
                         # random.py
-                        seed = long(hexlify(os.urandom(16)), 16)
+                        seed = int(hexlify(os.urandom(16)), 16)
                     except NotImplementedError:
                         # Include the pid to avoid initializing two
                         # processes to the same value
                         seed(int(time.time() * 1000) ^ os.getpid())
                     random.seed(seed)
                     self.io_loop = ioloop.IOLoop.instance()
-                    for fd in self._sockets.keys():
+                    for fd in list(self._sockets.keys()):
                         self.io_loop.add_handler(fd, self._handle_events,
                                                  ioloop.IOLoop.READ)
                     return
@@ -269,7 +269,7 @@ class HTTPServer(object):
         else:
             if not self.io_loop:
                 self.io_loop = ioloop.IOLoop.instance()
-            for fd in self._sockets.keys():
+            for fd in list(self._sockets.keys()):
                 self.io_loop.add_handler(fd, self._handle_events,
                                          ioloop.IOLoop.READ)
 
@@ -279,7 +279,7 @@ class HTTPServer(object):
         Requests currently in progress may still continue after the
         server is stopped.
         """
-        for fd, sock in self._sockets.iteritems():
+        for fd, sock in self._sockets.items():
             self.io_loop.remove_handler(fd)
             sock.close()
 
@@ -287,7 +287,7 @@ class HTTPServer(object):
         while True:
             try:
                 connection, address = self._sockets[fd].accept()
-            except socket.error, e:
+            except socket.error as e:
                 if e.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
                     return
                 raise
@@ -298,12 +298,12 @@ class HTTPServer(object):
                                                  server_side=True,
                                                  do_handshake_on_connect=False,
                                                  **self.ssl_options)
-                except ssl.SSLError, err:
+                except ssl.SSLError as err:
                     if err.args[0] == ssl.SSL_ERROR_EOF:
                         return connection.close()
                     else:
                         raise
-                except socket.error, err:
+                except socket.error as err:
                     if err.args[0] == errno.ECONNABORTED:
                         return connection.close()
                     else:
@@ -405,7 +405,7 @@ class HTTPConnection(object):
                 return
 
             self.request_callback(self._request)
-        except _BadRequestException, e:
+        except _BadRequestException as e:
             logging.info("Malformed HTTP request from %s: %s",
                          self.address[0], e)
             self.stream.close()
@@ -417,7 +417,7 @@ class HTTPConnection(object):
         if self._request.method in ("POST", "PUT"):
             if content_type.startswith("application/x-www-form-urlencoded"):
                 arguments = parse_qs_bytes(native_str(self._request.body))
-                for name, values in arguments.iteritems():
+                for name, values in arguments.items():
                     values = [v for v in values if v]
                     if values:
                         self._request.arguments.setdefault(name, []).extend(
@@ -539,12 +539,12 @@ class HTTPRequest(object):
         self._start_time = time.time()
         self._finish_time = None
 
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(native_str(uri))
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(native_str(uri))
         self.path = path
         self.query = query
         arguments = parse_qs_bytes(query)
         self.arguments = {}
-        for name, values in arguments.iteritems():
+        for name, values in arguments.items():
             values = [v for v in values if v]
             if values: self.arguments[name] = values
 

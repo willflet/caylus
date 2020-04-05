@@ -118,7 +118,7 @@ class WebSocketHandler(tornado.web.RequestHandler):
         """Sends the given message to the client of this Web Socket."""
         if isinstance(message, dict):
             message = tornado.escape.json_encode(message)
-        if isinstance(message, unicode):
+        if isinstance(message, str):
             message = message.encode("utf-8")
         assert isinstance(message, bytes_type)
         self.stream.write(b("\x00") + message + b("\xff"))
@@ -251,7 +251,7 @@ class WebSocketRequest(object):
                   "Sec-Websocket-Key2")
         if headers.get("Upgrade", '').lower() != "websocket" or \
            headers.get("Connection", '').lower() != "upgrade" or \
-           not all(map(lambda f: self.request.headers.get(f), fields)):
+           not all([self.request.headers.get(f) for f in fields]):
             raise ValueError("Missing/Invalid WebSocket headers")
 
     def _calculate_part(self, key):

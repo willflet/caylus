@@ -1,5 +1,5 @@
-from config import *
-from building import *
+from .config import *
+from .building import *
 
 class Player(object):
     
@@ -23,17 +23,17 @@ class Player(object):
         pass
         
     def has_resources(self, resources):
-        for resource, amount in resources.items():
+        for resource, amount in list(resources.items()):
             if self.resources[resource] < amount:
                 return False
         return True
     
     def add_resources(self, resources):
-        for resource, amount in resources.items():
+        for resource, amount in list(resources.items()):
             self.resources[resource] += amount
             
     def remove_resources(self, resources):
-        for resource, amount in resources.items():
+        for resource, amount in list(resources.items()):
             self.resources[resource] -= amount
             
     def __str__(self):

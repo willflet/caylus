@@ -1,6 +1,6 @@
 import random, logging
-from player import *
-from textinterface import *
+from .player import *
+from .textinterface import *
 #from building import *
 import copy
 
@@ -15,7 +15,7 @@ class Game(object):
             if i >= 3:
                 player.money += 1
             self.players.append(player)
-        
+
         self.continuous = False
         self.id = None
         self.turn = -1
@@ -24,12 +24,12 @@ class Game(object):
         self.spaces = SECTION_SPACES[:]
         self.inn_player = None
 
-        
+
         self.special_buildings = special_buildings
         #if players < 3:
         #    self.special_buildings.remove(stables)
         self.normal_buildings = []
-        
+
         random.shuffle(neutral_buildings)
         self.normal_buildings += neutral_buildings
         self.normal_buildings += fixed_buildings
@@ -39,12 +39,12 @@ class Game(object):
 
         #for b in stone_buildings + wood_buildings:
         #    self.normal_buildings[self.normal_buildings.index(null_building)] = b
-        
-        
+
+
         self.buildings = self.special_buildings + self.normal_buildings
         for building in self.buildings:
             building.owner = None
-            
+
         self.wood_buildings = copy.deepcopy(wood_buildings)
         self.stone_buildings = copy.deepcopy(stone_buildings)
         self.prestige_buildings = copy.deepcopy(prestige_buildings)
@@ -57,7 +57,7 @@ class Game(object):
     @property
     def over(self):
         return self.phase == -1
-        
+
     def begin_turn(self):
         self.turn += 1
         self.log('Beginning turn %d' % self.turn)
@@ -76,7 +76,7 @@ class Game(object):
         for i, building in enumerate(self.buildings):
             building.worker = None
             building.i = i
-        
+
     def step_game(self):
         #self.log('STEP_GAME Phase:%d Step:%d' % (self.phase, self.step))
         if self.turn == -1:
@@ -125,7 +125,7 @@ class Game(object):
                             break
                         else:
                             self.step += 1
-                            continue 
+                            continue
                     elif isinstance(building, int):
                         pass
                     else:
@@ -252,7 +252,7 @@ class Game(object):
             self.section = self.new_section
             # Perform delayed transformations
             for i, residence in self.delayed_lawyer:
-                self.normal_buildings[i] = residence 
+                self.normal_buildings[i] = residence
             self.delayed_lawyer = []
             # Activate stables
             for player in reversed(self.stables_order):
@@ -260,7 +260,7 @@ class Game(object):
                 self.players.insert(0, player)
             if len(self.players) == 2:
                 self.players.reverse()
-            
+
             if self.section == SECTION_OVER:
                 for player in self.players:
                     resources = 0
@@ -277,9 +277,9 @@ class Game(object):
             self.begin_turn()
             if self.continuous and self.section != SECTION_OVER:
                 self.step_game()
-        
-            
-        
+
+
+
     def make_decision(self, decision, i):
         #self.log('MAKE_DECISION: %s, %d Phase:%d Step:%d' % (decision, i, self.phase, self.step))
         self.current_decision = None
@@ -374,9 +374,9 @@ class Game(object):
                 self.log('%s scores {P%d} from submission of %s', player, SECTION_POINTS[section], format_resources(action.input))
                 self.spaces[section] -= 1
                 player.section_batches[section] += 1
-                    
+
             self.step_game()
-            
+
     def pop_decision_or_continue(self, step_after=True):
         ''' Call after a player's decision is processed. Pops a decision from the stack
         and presents it if available, or proceeds if not.'''
@@ -396,12 +396,12 @@ class Game(object):
             self.step += 1 # We're done with this building
             if step_after:
                 self.step_game()
-        
-            
+
+
     def award_favor(self, player):
         decision = FavorTrackDecision(player)
         player.make_decision(decision)
-            
+
     def available_buildings(self, player, cost=True):
         ''' Buildings that can have workers placed on them by a certain player.
             cost is whether or not to take into account placement cost. '''
@@ -413,7 +413,7 @@ class Game(object):
                                        (not isinstance(building, CastleBuilding) or player not in self.castle_order)and\
                                        (not isinstance(building, StablesBuilding) or (player not in self.stables_order and len(self.stables_order) < 3 and len(self.players)>=3)) \
                                 ]
-            
+
     def placement_cost(self, building, player):
         '''Amount it will cost for a player to take a building'''
         if not self.pass_order:
@@ -425,7 +425,7 @@ class Game(object):
         if self.num_players == 2 and self.pass_order:
             return 3
         return len(self.pass_order) + 1
-        
+
     def log(self, message, player=None, *args):
         if not player:
             rendered =  message
@@ -441,6 +441,6 @@ if __name__ == '__main__':
 
     while game.section != SECTION_OVER:
         game.step_game()
-    print 'GAME OVER'
+    print('GAME OVER')
     for player in game.players:
-        print '%s: %d' % (player.name, player.points)
+        print('%s: %d' % (player.name, player.points))

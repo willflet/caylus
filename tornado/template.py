@@ -84,9 +84,9 @@ hand, but instead use the `render` and `render_string` methods of
 on the ``template_path`` `Application` setting.
 """
 
-from __future__ import with_statement
 
-import cStringIO
+
+import io
 import datetime
 import logging
 import os.path
@@ -138,10 +138,10 @@ class Template(object):
             "linkify": escape.linkify,
             "datetime": datetime,
             "_utf8": escape.utf8,  # for internal use
-            "_string_types": (unicode, bytes_type),
+            "_string_types": (str, bytes_type),
         }
         namespace.update(kwargs)
-        exec self.compiled in namespace
+        exec(self.compiled, namespace)
         execute = namespace["_execute"]
         try:
             return execute()
@@ -151,7 +151,7 @@ class Template(object):
             raise
 
     def _generate_python(self, loader, compress_whitespace):
-        buffer = cStringIO.StringIO()
+        buffer = io.StringIO()
         try:
             # named_blocks maps from names to _NamedBlock objects
             named_blocks = {}
@@ -454,9 +454,9 @@ class _CodeWriter(object):
     def write_line(self, line, indent=None):
         if indent == None:
             indent = self._indent
-        for i in xrange(indent):
+        for i in range(indent):
             self.file.write("    ")
-        print >> self.file, line
+        print(line, file=self.file)
 
 
 class _TemplateReader(object):

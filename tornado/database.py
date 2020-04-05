@@ -99,7 +99,7 @@ class Connection(object):
             self._execute(cursor, query, parameters)
             column_names = [d[0] for d in cursor.description]
             for row in cursor:
-                yield Row(zip(column_names, row))
+                yield Row(list(zip(column_names, row)))
         finally:
             cursor.close()
 
@@ -109,7 +109,7 @@ class Connection(object):
         try:
             self._execute(cursor, query, parameters)
             column_names = [d[0] for d in cursor.description]
-            return [Row(itertools.izip(column_names, row)) for row in cursor]
+            return [Row(zip(column_names, row)) for row in cursor]
         finally:
             cursor.close()
 

@@ -3,7 +3,7 @@ COLORS = ['Blue','Red','Green','Orange','Black']
 
 def format_resources(resources):
     out = []
-    for resource, amount in resources.items():
+    for resource, amount in list(resources.items()):
         if resource == 'money':
             out += ['{$%s}' % str(amount)]
         elif resource == 'points':
@@ -13,7 +13,7 @@ def format_resources(resources):
     out.sort()
     return ''.join(out)
     
-PHASES = range(8)
+PHASES = list(range(8))
     
 PHASE_INCOME = 0
 PHASE_PLACE = 1

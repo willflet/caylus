@@ -21,7 +21,7 @@ def import_object(name):
 # to convert our string literals.  b() should only be applied to literal
 # latin1 strings.  Once we drop support for 2.5, we can remove this function
 # and just use byte literals.
-if str is unicode:
+if str is str:
     def b(s):
         return s.encode('latin1')
     bytes_type = bytes

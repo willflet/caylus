@@ -1,4 +1,4 @@
-from config import *
+from .config import *
 import logging
 
 
@@ -149,9 +149,9 @@ class LawyerAction(TradeAction):
         player.points += 2
         player.game.log('%s gains 2 points from residence construction', player)
         if hasattr(self.target, 'cost'): # Place constructable buildings back in the pool
-            if 'wood' in self.target.cost.keys():
+            if 'wood' in list(self.target.cost.keys()):
                 player.game.wood_buildings.append(self.target)
-            if 'stone' in self.target.cost.keys():
+            if 'stone' in list(self.target.cost.keys()):
                 player.game.stone_buildings.append(self.target)
 
         
@@ -372,7 +372,7 @@ class CarpenterBuilding(Building):
             if 'any' in cost: # Ugh, have to deal with being able to construct some buildings with anything
                 for resource in RESOURCES:
                     new_cost = {}
-                    for key, value in cost.items():
+                    for key, value in list(cost.items()):
                         if key == 'any':
                             new_cost[resource] = new_cost.get(resource,0) + value
                         else:
@@ -520,7 +520,7 @@ class StoneProductionBuilding(CompoundBuilding):
     of resources to the owner if different from the worker'''
     def __init__(self, name, production):
         self.production = production
-        one, two = production.keys()
+        one, two = list(production.keys())
         CompoundBuilding.__init__( self, name, \
             ActionDecision(None, [ProduceAction(**production)]), \
             ActionDecision(None, [ProduceAction(**{one:1}), ProduceAction(**{two:1})]))
@@ -533,7 +533,7 @@ class StoneProductionBuilding(CompoundBuilding):
         return None # Worker was = to owner, no bonus
     
     def __repr__(self):
-        one, two = self.production.keys()
+        one, two = list(self.production.keys())
         return format_resources(self.production) + ' (%s/%s)' % (one[0].upper(), two[0].upper())
         
 class ResourceTrackTwoForOneBuilding(CompoundBuilding):
@@ -649,8 +649,8 @@ def get_track_name(track):
     return track_names[favor_tracks.index(track)]
 
 if __name__ == '__main__':
-    from player import *
+    from .player import *
     player = Player(None, None)
-    print wood_quarry.activate(player).actions
+    print(wood_quarry.activate(player).actions)
     #print player
     #print merchant_guild
