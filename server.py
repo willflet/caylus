@@ -27,7 +27,7 @@ def render_template(name):
 class WebPlayer(Player):
     def make_decision(self, decision):
         with open(os.path.join(CURRENT_DIR, '..', 'saved_games', self.game.id, '{}.pkl'.format(self.game.state)), 'wb') as f:
-            pickle.dump(self.game, f)
+            pickle.dump((self.game, self), f)
         self.game.state += 1
         #logging.info('Presenting clients with decision %s Phase:%d Step:%d Data:%s' % (decision, self.game.phase, self.game.step, decision.__dict__))
         logging.info('Presenting decision for game %s on step %d' % (self.game.id, self.game.step))
@@ -69,8 +69,9 @@ class ConnectHandler(tornado.web.RequestHandler):
         if load:
             MessageQueue.delete_queue(id)
             with open(os.path.join(CURRENT_DIR, '..', 'saved_games', id, '{}.pkl'.format(state)), 'rb') as f:
-                game = pickle.load(f)
+                game, player = pickle.load(f)
             GAMES[game.id] = game
+            player.make_decision(game.current_decision)
         elif create:
             MessageQueue.delete_queue(id)
             game = Game(player, WebPlayer)

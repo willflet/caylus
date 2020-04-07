@@ -58,7 +58,7 @@ class Game(object):
     @property
     def over(self):
         return self.phase == -1
-    
+
     def begin_turn(self):
         self.turn += 1
         self.log('Beginning turn %d' % self.turn)
