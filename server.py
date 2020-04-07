@@ -1,4 +1,5 @@
-import os, logging
+import os, logging, sys, glob
+import pickle
 from mako.template import Template
 import tornado.ioloop
 import tornado.web
@@ -25,6 +26,9 @@ def render_template(name):
 
 class WebPlayer(Player):
     def make_decision(self, decision):
+        with open(os.path.join(CURRENT_DIR, '..', 'saved_games', self.game.id, '{}.pkl'.format(self.game.state)), 'wb') as f:
+            pickle.dump(self.game, f)
+        self.game.state += 1
         #logging.info('Presenting clients with decision %s Phase:%d Step:%d Data:%s' % (decision, self.game.phase, self.game.step, decision.__dict__))
         logging.info('Presenting decision for game %s on step %d' % (self.game.id, self.game.step))
         logging.info(GAMES)
@@ -56,17 +60,26 @@ class MainHandler(tornado.web.RequestHandler):
 
 class ConnectHandler(tornado.web.RequestHandler):
     def get(self):
-
         id = self.get_argument('id')
         player = int(self.get_argument('player'))
         create = self.get_argument('create') == '1'
+        load = self.get_argument('load') == '1'
+        state = self.get_argument('state')
 
-        if create:
+        if load:
+            MessageQueue.delete_queue(id)
+            with open(os.path.join(CURRENT_DIR, '..', 'saved_games', id, '{}.pkl'.format(state)), 'rb') as f:
+                game = pickle.load(f)
+            GAMES[game.id] = game
+        elif create:
             MessageQueue.delete_queue(id)
             game = Game(player, WebPlayer)
             game.id = id
             game.continuous = True
-            player = 0
+            os.makedirs(os.path.join(CURRENT_DIR, '..', 'saved_games', game.id), exist_ok=True)
+            for f in glob.glob(os.path.join(CURRENT_DIR, '..', 'saved_games', game.id, '*.pkl')):
+                os.remove(f)
+
             GAMES[game.id] = game
             game.begin_turn()
             game.step_game()
@@ -80,7 +93,6 @@ class SubmitHandler(tornado.web.RequestHandler):
     def post(self):
         game = GAMES[self.get_argument('id')]
         game.make_decision(game.current_decision, int(self.get_argument('i')))
-
         self.write('Ok')
 
 

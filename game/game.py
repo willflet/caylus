@@ -6,6 +6,7 @@ import copy
 
 class Game(object):
     def __init__(self, players=2, player_class=Player):
+        self.state = 0
         self.num_players = players
         self.players = []
         for i in range(self.num_players):
@@ -57,7 +58,7 @@ class Game(object):
     @property
     def over(self):
         return self.phase == -1
-
+    
     def begin_turn(self):
         self.turn += 1
         self.log('Beginning turn %d' % self.turn)

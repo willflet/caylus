@@ -40,7 +40,7 @@ def building_to_json(building):
 
 def game_to_json(game):
     info = {}
-    attrs = ['turn', 'phase', 'step', 'section', 'bailiff', 'provost']
+    attrs = ['turn', 'phase', 'step', 'section', 'bailiff', 'provost', 'state']
     for attr in attrs:
         info[attr] = getattr(game, attr)
     info['pass_order'] = [p.name for p in game.pass_order]
