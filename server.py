@@ -26,13 +26,13 @@ def render_template(name):
 
 class WebPlayer(Player):
     def make_decision(self, decision):
-        with open(os.path.join(CURRENT_DIR, '..', 'saved_games', self.game.id, '{}.pkl'.format(self.game.state)), 'wb') as f:
-            pickle.dump((self.game, self), f)
+        self.game.current_decision = decision
+        with open(os.path.join(CURRENT_DIR, '..', 'saved_states', self.game.id, '{}.pkl'.format(self.game.state)), 'wb') as f:
+            pickle.dump(self, f)
         self.game.state += 1
         #logging.info('Presenting clients with decision %s Phase:%d Step:%d Data:%s' % (decision, self.game.phase, self.game.step, decision.__dict__))
         logging.info('Presenting decision for game %s on step %d' % (self.game.id, self.game.step))
         logging.info(GAMES)
-        self.game.current_decision = decision
         queue = MessageQueue.get_queue(self.game.id)
         queue.new_messages([game_to_json(self.game)])
 
@@ -68,17 +68,18 @@ class ConnectHandler(tornado.web.RequestHandler):
 
         if load:
             MessageQueue.delete_queue(id)
-            with open(os.path.join(CURRENT_DIR, '..', 'saved_games', id, '{}.pkl'.format(state)), 'rb') as f:
-                game, player = pickle.load(f)
+            with open(os.path.join(CURRENT_DIR, '..', 'saved_states', id, '{}.pkl'.format(state)), 'rb') as f:
+                current_player = pickle.load(f)
+                game = current_player.game
             GAMES[game.id] = game
-            player.make_decision(game.current_decision)
+            current_player.make_decision(game.current_decision)
         elif create:
             MessageQueue.delete_queue(id)
             game = Game(player, WebPlayer)
             game.id = id
             game.continuous = True
-            os.makedirs(os.path.join(CURRENT_DIR, '..', 'saved_games', game.id), exist_ok=True)
-            for f in glob.glob(os.path.join(CURRENT_DIR, '..', 'saved_games', game.id, '*.pkl')):
+            os.makedirs(os.path.join(CURRENT_DIR, '..', 'saved_states', game.id), exist_ok=True)
+            for f in glob.glob(os.path.join(CURRENT_DIR, '..', 'saved_states', game.id, '*.pkl')):
                 os.remove(f)
 
             GAMES[game.id] = game
