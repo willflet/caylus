@@ -6,95 +6,95 @@ import logging
 class Action(object):
     def can_execute(self, player):
         return True
-    
-    
+
+
     def execute(self, player):
         raise Exception('Not implented')
 
 class NullAction(Action):
     def execute(self, player):
         pass
-    
+
     def __repr__(self):
         return '(None)'
-        
-        
+
+
 class MoveProvostAction(Action):
     def __init__(self, spaces):
         self.spaces = spaces
-        
+
     def can_execute(self, player):
         return 0 < player.game.provost + self.spaces < LAST_SPACE
-        
+
     def execute(self, player):
         player.game.provost += self.spaces
-        
+
     def __repr__(self):
         return 'P%+d' % self.spaces
-    
+
 class BribeProvostAction(Action):
     def __init__(self, spaces):
         self.spaces = spaces
-        
+
     def can_execute(self, player):
         return 0 < player.game.provost + self.spaces < LAST_SPACE and player.money >= abs(self.spaces)
-        
+
     def execute(self, player):
         player.game.provost += self.spaces
         player.money -= abs(self.spaces)
-        
-        
+
+
     def __repr__(self):
         return '{$%d}->P%+d' % (abs(self.spaces), self.spaces)
-       
+
 class ProduceAction(Action):
     def __init__(self, **output):
         self.output = output
-        
+
     def execute(self, player):
         player.add_resources(self.output)
-        
+
     def __repr__(self):
         return format_resources(self.output)
-        
+
 class TradeAction(Action):
     ''' An action that involves exchanging some amount of resources/money for others.'''
     def __init__(self, input, output={}):
         self.input = input
         self.output = output
-        
+
     def can_execute(self, player):
         return player.has_resources(self.input)
-        
+
     def execute(self, player):
         player.remove_resources(self.input)
         player.add_resources(self.output)
-        
+
     def __repr__(self):
         return '%s->%s' % (format_resources(self.input), format_resources(self.output))
-        
+
 class JoustAction(TradeAction):
     def __init__(self):
         TradeAction.__init__(self, input={'cloth':1, 'money':1}, output={})
-        
+
     def execute(self, player):
         player.remove_resources(self.input)
         player.game.decision_stack.append(FavorTrackDecision(player))
-        
-        
+
+
     def __repr__(self):
         return '%s->RF' % format_resources(self.input)
-        
+
 class ConstructAction(TradeAction):
     def __init__(self, building, cost):
         self.building = building
         TradeAction.__init__(self, input=cost, output={})
-        
+
     def can_execute(self, player):
         # Prevent double construction of buildings
         logging.info('Construction of %s: %s, %s' % (self.building, TradeAction.can_execute(self, player),self.building in (player.game.wood_buildings + player.game.stone_buildings)))
         return TradeAction.can_execute(self, player) and self.building in (player.game.wood_buildings + player.game.stone_buildings)
-        
+
     def execute(self, player):
         player.remove_resources(self.input)
         if self.building in player.game.wood_buildings:
@@ -113,17 +113,17 @@ class ConstructAction(TradeAction):
             player.game.log('%s gains %d royal favors from building construction', player, self.building.favors)
             for i in range(self.building.favors):
                 player.game.decision_stack.append(FavorTrackDecision(player))
-        
+
     def __repr__(self):
         return '%s->[%s]' % (format_resources(self.input), self.building)
 
 class CastleAction(TradeAction):
     def __init__(self, res1, res2):
         TradeAction.__init__(self, input={'food':1, res1:1, res2:1}, output={})
-        
+
     def __repr__(self):
         return '%s->Castle' % format_resources(self.input)
-        
+
 class LawyerAction(TradeAction):
     def __init__(self, target, discount=False):
         self.target = target
@@ -131,13 +131,13 @@ class LawyerAction(TradeAction):
             TradeAction.__init__(self, input={'cloth':1}, output={})
         else:
             TradeAction.__init__(self, input={'cloth':1, 'money':1}, output={})
-        
+
     def can_execute(self, player):
         for i, residence in player.game.delayed_lawyer:
             if i == player.game.normal_buildings.index(self.target):
                 return False # Someone has already transformed our target building
-        return TradeAction.can_execute(self, player) 
-        
+        return TradeAction.can_execute(self, player)
+
     def execute(self, player):
         player.remove_resources(self.input)
         i = player.game.normal_buildings.index(self.target)
@@ -154,7 +154,7 @@ class LawyerAction(TradeAction):
             if 'stone' in list(self.target.cost.keys()):
                 player.game.stone_buildings.append(self.target)
 
-        
+
     def __repr__(self):
         return '[%s]->[Residence]' % self.target
 
@@ -163,7 +163,7 @@ class ArchitectAction(TradeAction):
         self.target = target
         self.result = result
         TradeAction.__init__(self, input=self.result.cost, output={})
-        
+
     def execute(self, player):
         player.remove_resources(self.input)
         i = player.game.normal_buildings.index(self.target)
@@ -176,28 +176,28 @@ class ArchitectAction(TradeAction):
             player.game.log('%s gains %d royal favors from prestige building construction', player, self.result.favors)
             for i in range(self.result.favors):
                 player.game.decision_stack.append(FavorTrackDecision(player))
-                
+
     def __repr__(self):
         return '[Residence]+%s->[Prestige]({P%d} %dRF +{$%d})' % (format_resources(self.input),
                                              self.result.points, self.result.favors, self.result.income)
 
 class FavorAction(Action):
     ''' A favor action allows the player to select from a number of favors on one track'''
-        
+
     def __init__(self, building):
         self.building = building
-        
+
     def execute(self, player):
         decision = self.building.activate(player)
         player.game.decision_stack.append(FavorDecision(player, decision.actions)) # Cast to FavorDecision
-        
+
     def __repr__(self):
         return repr(self.building)
 
 class GateAction(Action):
     def __init__(self, target):
         self.target = target
-        
+
     def execute(self, player):
         if isinstance(self.target, CastleBuilding):
             player.game.castle_order.append(player)
@@ -206,15 +206,15 @@ class GateAction(Action):
             player.game.stables_order.append(player)
         else:
             self.target.worker = player
-        
+
     def __repr__(self):
         return 'Worker->[%s]' % self.target
-    
+
 class RemoveWorkerFromInnAction(Action):
     def execute(self, player):
         player.game.inn_player = None
         player.game.log("%s removes their worker from the inn", player)
-        
+
     def __repr__(self):
         return 'Remove worker from inn'
 
@@ -229,17 +229,17 @@ class ActionDecision(Decision):
         self.actions = actions
     def filter_actions(self):
         self.actions = [action for action in self.actions if action.can_execute(self.player)]
-        
+
 class WorkerDecision(Decision):
     def __init__(self, player, buildings):
         self.player = player
         self.buildings = buildings
         self.buildings = [None] + self.buildings
-        
+
 class FavorTrackDecision(Decision):
     def __init__(self, player):
         self.player = player
-        
+
     @property
     def tracks(self):
         current_time = (self.player.game.turn, self.player.game.phase)
@@ -247,8 +247,8 @@ class FavorTrackDecision(Decision):
             self.player.when_used = current_time
             self.player.tracks_used = []
         return [track for track in favor_tracks if track not in self.player.tracks_used]
-            
-        
+
+
 
 class FavorDecision(ActionDecision):
     def __init__(self, player, actions):
@@ -268,7 +268,7 @@ class Building(object):
 
     def __hash__(self):
         return hash(self.name)
-        
+
     def activate(self, player):
         actions = [action for action in self.actions if action.can_execute(player)]
         return ActionDecision(player, actions)
@@ -279,61 +279,61 @@ class Building(object):
         #    actions[0].execute(player)
         #else:
         #    print actions
-        
+
     def can_activate(self, player):
         return True
-        
+
     def constructable(self, points, **cost):
         self.cost = cost
         self.points = points
         return self
-    
+
     def awards_favors(self, num):
         self.favors = num
         return self
-            
+
     def __repr__(self):
         return '/'.join([str(action) for action in self.actions if not isinstance(action, NullAction)])
 
-    
+
 class UnusableBuilding(Building):
     pass
-    
+
 class NullBuilding(UnusableBuilding):
     def activate(self, player):
         return ActionDecision(player, [NullAction()])
     def __eq__(self, other):
         return isinstance(other, NullBuilding)
-        
+
 class IncomeBuilding(Building):
     pass
-        
+
 class ResidenceBuilding(IncomeBuilding, UnusableBuilding):
     def __init__(self):
         self.name = 'Residence'
         self.income = 1
-        
+
     def __repr__(self):
         return 'Residence [+{$1}]'
-    
+
 class PrestigeBuilding(UnusableBuilding):
     def __init__(self, name):
         self.name = name
         self.favors = 0
         self.income = 0
-        
+
     def __repr__(self):
-        return 'Prestige' 
-    
+        return 'Prestige'
+
 class PrestigeIncomeBuilding(IncomeBuilding, PrestigeBuilding):
     def __init__(self, name, income):
         self.name = name
         self.favors = 0
         self.income = income
-        
+
     def __repr__(self):
         return 'Prestige [+{$%d}]' % ( self.income)
-        
+
 class MarketBuilding(Building):
     ''' A market building allows the sale of any resource for money'''
     def __init__(self, name, amount):
@@ -353,14 +353,14 @@ class PeddlerBuilding(Building):
         self.actions.insert(0, NullAction())
     def __repr__(self):
         return '{$%d}->{R}' % self.amount
-    
+
 class GuildBuilding(Building):
     def __init__(self, name):
         self.name = name
         self.actions = [MoveProvostAction(i) for i in [-3, -2, -1, 0, 1, 2, 3]]
     def __repr__(self):
         return 'Prov'
-    
+
 class CarpenterBuilding(Building):
     def __init__(self, name, discount=False):
         self.name = name
@@ -382,7 +382,7 @@ class CarpenterBuilding(Building):
                 self.actions.append(ConstructAction(building, cost))
     def __repr__(self):
         return 'Carpenter'
-    
+
 class MasonBuilding(Building):
     def __init__(self, name, discount=False):
         self.name = name
@@ -394,7 +394,7 @@ class MasonBuilding(Building):
             self.actions.append(ConstructAction(building, cost))
     def __repr__(self):
         return 'Mason'
-    
+
 class LawyerBuilding(Building):
     def __init__(self, name, discount=False):
         self.name = name
@@ -410,11 +410,11 @@ class LawyerBuilding(Building):
         return Building.activate(self, player) # Let's still take advantage of the superclass filtering
     def __repr__(self):
         return 'Lawyer'
- 
+
 class ArchitectBuilding(Building):
     def __init__(self, name):
         self.name = name
-        
+
     def activate(self, player):
         buildings = [building for building in player.game.normal_buildings if \
                      isinstance(building, ResidenceBuilding) and building.owner == player]
@@ -424,39 +424,39 @@ class ArchitectBuilding(Building):
         for result in player.game.prestige_buildings:
             self.actions.append(ArchitectAction(buildings[0], result))
         return Building.activate(self, player)
-        
+
     def __repr__(self):
         return 'Architect'
-    
+
 class GateBuilding(Building):
-    
+
     def activate(self, player):
         available_buildings = player.game.available_buildings(player, cost=False)
         self.actions = [GateAction(building) for building in available_buildings]
         return Building.activate(self, player)
-            
-    
+
+
     def __repr__(self):
         return 'Gate'
-    
+
 class InnBuilding(Building):
-    
+
     def __init__(self):
         self.name = 'Inn'
     def __repr__(self):
         return 'Inn'
-        
+
 class StablesBuilding(Building):
     def __init__(self):
         self.name = 'Stables'
     def __repr__(self):
         return 'Stables'
-   
+
 class BribeProvostBuilding(Building):
     def __init__(self):
         self.actions = [NullAction()]
         self.actions += [BribeProvostAction(spaces) for spaces in [-3,-2,-1,1,2,3]]
-   
+
 class CastleBuilding(Building):
     def __init__(self):
         self.name = 'Castle'
@@ -465,14 +465,14 @@ class CastleBuilding(Building):
 
     def __repr__(self):
         return 'Castle'
-    
+
 class CompoundBuilding(Building):
     ''' A compound building allows the player, or possibly different players, to make multiple decisions.
         Forms the basis of stone farms and other complex buildings '''
     def __init__(self, name, *decisions):
         self.name = name
         self.decisions = decisions
-        
+
     def activate(self, player):
         first = self.decisions[0]
         last = self.decisions[-1]
@@ -483,14 +483,14 @@ class CompoundBuilding(Building):
             if decision != first and decision.player != None:
                 player.game.decision_stack.append(decision)
         return first
-        
+
     def deciding_player(self, i):
         ''' Who will make the ith decision for this building?'''
         return self.worker
-    
+
     def __repr__(self):
         return '(Undefined)'
-    
+
 class WoodPeddlerBuilding(CompoundBuilding):
     def __init__(self):
         self.name = 'Peddler (Wood)'
@@ -498,7 +498,7 @@ class WoodPeddlerBuilding(CompoundBuilding):
         CompoundBuilding.__init__(self, 'Peddler', ActionDecision(None, actions), ActionDecision(None, actions))
     def __repr__(self):
         return '{$1}->{R}/{$2}->{R2}'
-    
+
 class StoneAlchemistBuilding(CompoundBuilding):
     def __init__(self):
         actions = []
@@ -514,7 +514,7 @@ class StoneAlchemistBuilding(CompoundBuilding):
         CompoundBuilding.__init__(self, 'Alchemist', ActionDecision(None, actions), ActionDecision(None, actions))
     def __repr__(self):
         return '{R2}->{G}/{R4}->{G2}'
-    
+
 class StoneProductionBuilding(CompoundBuilding):
     ''' A stone farm, in addition to providing resource to its worker, may provide a choice
     of resources to the owner if different from the worker'''
@@ -524,37 +524,37 @@ class StoneProductionBuilding(CompoundBuilding):
         CompoundBuilding.__init__( self, name, \
             ActionDecision(None, [ProduceAction(**production)]), \
             ActionDecision(None, [ProduceAction(**{one:1}), ProduceAction(**{two:1})]))
-        
+
     def deciding_player(self, i):
         if i == 0: # Worker gets the basic production
             return self.worker
         if i == 1 and self.worker != self.owner: # Allow owner to pick their bonus resource
             return self.owner
         return None # Worker was = to owner, no bonus
-    
+
     def __repr__(self):
         one, two = list(self.production.keys())
         return format_resources(self.production) + ' (%s/%s)' % (one[0].upper(), two[0].upper())
-        
+
 class ResourceTrackTwoForOneBuilding(CompoundBuilding):
     def __init__(self):
         lose_one = ActionDecision(None, [TradeAction({resource:1},{}) for resource in RESOURCES])
         gain_one = ActionDecision(None, [ProduceAction(**{resource:1}) for resource in RESOURCES if resource != 'gold'])
         CompoundBuilding.__init__(self, None, lose_one, gain_one, gain_one)
-        
+
     def can_activate(self, player):
         for resource in RESOURCES:
             if player.resources[resource] > 0:
                 return True
         return False
-    
+
     def activate(self, player):
         self.player = player
         return CompoundBuilding.activate(self, player)
-    
+
     def deciding_player(self, player):
         return self.player
-        
+
     def __repr__(self):
         return '{R}->{R2}'
 
@@ -585,7 +585,7 @@ stone_tailor = Building("Tailor", NullAction(), TradeAction({'cloth':2}, {'point
 stone_church = Building("Church", NullAction(), TradeAction({'money':2}, {'points':3}), TradeAction({'money':4},{'points':5})).constructable(3, stone=1, cloth=1).awards_favors(1)
 stone_bank = Building("Bank", NullAction(), TradeAction({'money':2}, {'gold':1}), TradeAction({'money':5},{'gold':2})).constructable(6, stone=1, wood=1)
 stone_jeweler = Building("Jeweler", NullAction(), TradeAction({'gold':1}, {'points':5}), TradeAction({'gold':2},{'points':9})).constructable(6, stone=1, cloth=1)
-stone_alchemist = StoneAlchemistBuilding().constructable(6, wood=1, stone=1)
+stone_alchemist = StoneAlchemistBuilding().constructable(6, food=1, stone=1)
 stone_farm = StoneProductionBuilding("Farm (Stone)", {'food':2, 'cloth':1}).constructable(3, stone=1, food=1)
 stone_park = StoneProductionBuilding("Park", {'wood':2, 'food':1}).constructable(3, stone=1, food=1)
 stone_workshop = StoneProductionBuilding("Workshop", {'stone':2, 'cloth':1}).constructable(3, stone=1, food=1)
