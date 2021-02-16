@@ -310,7 +310,7 @@ class IncomeBuilding(Building):
 
 class ResidenceBuilding(IncomeBuilding, UnusableBuilding):
     def __init__(self):
-        self.name = 'Residence'
+        super().__init__('Residence')
         self.income = 1
 
     def __repr__(self):
@@ -318,7 +318,7 @@ class ResidenceBuilding(IncomeBuilding, UnusableBuilding):
 
 class PrestigeBuilding(UnusableBuilding):
     def __init__(self, name):
-        self.name = name
+        super().__init__(name)
         self.favors = 0
         self.income = 0
 
@@ -327,7 +327,7 @@ class PrestigeBuilding(UnusableBuilding):
 
 class PrestigeIncomeBuilding(IncomeBuilding, PrestigeBuilding):
     def __init__(self, name, income):
-        self.name = name
+        super().__init__(name)
         self.favors = 0
         self.income = income
 
@@ -337,7 +337,7 @@ class PrestigeIncomeBuilding(IncomeBuilding, PrestigeBuilding):
 class MarketBuilding(Building):
     ''' A market building allows the sale of any resource for money'''
     def __init__(self, name, amount):
-        self.name = name
+        super().__init__(name)
         self.amount = amount
         self.actions = [TradeAction({resource:1}, {'money':amount}) for resource in RESOURCES]
         self.actions.insert(0, NullAction())
@@ -347,7 +347,7 @@ class MarketBuilding(Building):
 class PeddlerBuilding(Building):
     ''' A peddler building allows the purchase of any resource for money'''
     def __init__(self, name, amount):
-        self.name = name
+        super().__init__(name)
         self.amount = amount
         self.actions = [TradeAction({'money':amount}, {resource:1}) for resource in RESOURCES if resource != 'gold']
         self.actions.insert(0, NullAction())
@@ -356,14 +356,14 @@ class PeddlerBuilding(Building):
 
 class GuildBuilding(Building):
     def __init__(self, name):
-        self.name = name
+        super().__init__(name)
         self.actions = [MoveProvostAction(i) for i in [-3, -2, -1, 0, 1, 2, 3]]
     def __repr__(self):
         return 'Prov'
 
 class CarpenterBuilding(Building):
     def __init__(self, name, discount=False):
-        self.name = name
+        super().__init__(name)
         self.actions = [NullAction()]
         for building in wood_buildings:
             cost = building.cost.copy()
@@ -385,7 +385,7 @@ class CarpenterBuilding(Building):
 
 class MasonBuilding(Building):
     def __init__(self, name, discount=False):
-        self.name = name
+        super().__init__(name)
         self.actions = [NullAction()]
         for building in stone_buildings:
             cost = building.cost.copy()
@@ -397,7 +397,7 @@ class MasonBuilding(Building):
 
 class LawyerBuilding(Building):
     def __init__(self, name, discount=False):
-        self.name = name
+        super().__init__(name)
         self.discount = discount
     def activate(self, player): # Transformable building must be dynamically found
         buildings = [building for building in player.game.normal_buildings if \
@@ -413,7 +413,7 @@ class LawyerBuilding(Building):
 
 class ArchitectBuilding(Building):
     def __init__(self, name):
-        self.name = name
+        super().__init__(name)
 
     def activate(self, player):
         buildings = [building for building in player.game.normal_buildings if \
@@ -442,24 +442,25 @@ class GateBuilding(Building):
 class InnBuilding(Building):
 
     def __init__(self):
-        self.name = 'Inn'
+        super().__init__('Inn')
     def __repr__(self):
         return 'Inn'
 
 class StablesBuilding(Building):
     def __init__(self):
-        self.name = 'Stables'
+        super().__init__('Stables')
     def __repr__(self):
         return 'Stables'
 
 class BribeProvostBuilding(Building):
     def __init__(self):
+        super().__init__('BribeProvost')
         self.actions = [NullAction()]
         self.actions += [BribeProvostAction(spaces) for spaces in [-3,-2,-1,1,2,3]]
 
 class CastleBuilding(Building):
     def __init__(self):
-        self.name = 'Castle'
+        super().__init__('Castle')
         self.actions = [NullAction(), CastleAction('wood', 'stone'), CastleAction('wood', 'cloth'), CastleAction('cloth', 'stone'),
                         CastleAction('wood', 'gold'), CastleAction('stone', 'gold'), CastleAction('cloth', 'gold')]
 
@@ -470,7 +471,7 @@ class CompoundBuilding(Building):
     ''' A compound building allows the player, or possibly different players, to make multiple decisions.
         Forms the basis of stone farms and other complex buildings '''
     def __init__(self, name, *decisions):
-        self.name = name
+        super().__init__(name)
         self.decisions = decisions
 
     def activate(self, player):
@@ -493,7 +494,7 @@ class CompoundBuilding(Building):
 
 class WoodPeddlerBuilding(CompoundBuilding):
     def __init__(self):
-        self.name = 'Peddler (Wood)'
+        super().__init__('Peddler (Wood)')
         actions = [TradeAction({'money':1}, {resource:1}) for resource in RESOURCES if resource != 'gold']
         CompoundBuilding.__init__(self, 'Peddler', ActionDecision(None, actions), ActionDecision(None, actions))
     def __repr__(self):
@@ -501,6 +502,7 @@ class WoodPeddlerBuilding(CompoundBuilding):
 
 class StoneAlchemistBuilding(CompoundBuilding):
     def __init__(self):
+        super().__init__('StoneAlchemist')
         actions = []
         for one in RESOURCES:
             for two in RESOURCES:
@@ -519,6 +521,7 @@ class StoneProductionBuilding(CompoundBuilding):
     ''' A stone farm, in addition to providing resource to its worker, may provide a choice
     of resources to the owner if different from the worker'''
     def __init__(self, name, production):
+        super().__init__(name)
         self.production = production
         one, two = list(production.keys())
         CompoundBuilding.__init__( self, name, \
@@ -538,6 +541,7 @@ class StoneProductionBuilding(CompoundBuilding):
 
 class ResourceTrackTwoForOneBuilding(CompoundBuilding):
     def __init__(self):
+        super().__init__('ResourceTrackTwoForOne')
         lose_one = ActionDecision(None, [TradeAction({resource:1},{}) for resource in RESOURCES])
         gain_one = ActionDecision(None, [ProduceAction(**{resource:1}) for resource in RESOURCES if resource != 'gold'])
         CompoundBuilding.__init__(self, None, lose_one, gain_one, gain_one)
